@@ -1,0 +1,20 @@
+{
+    "events": [
+        {
+        "id": 1,
+        "title": "Concert de rock",
+        "description": "Un concert de rock avec des groupes locaux.",
+        "date": "2024-07-15",
+        "location": "Stade de la ville",
+        "image": "C:\\Users\\user\\Downloads\\event.png"
+        },
+        {
+        "id": 2,
+        "title": "Festival de jazz",
+        "description": "Un festival de jazz avec des artistes internationaux.",
+        "date": "2024-08-20",
+        "location": "Parc central",
+        "image": "C:\\Users\\user\\Downloads\\jazz.png"
+        }
+    ]
+}

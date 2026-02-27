@@ -1,35 +1,132 @@
-import { useParams } from "react-router-dom";
-import eventsData from "../events.json";
-import { Container, Card } from "react-bootstrap";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Container, Button, Row, Col, Image, Badge } from 'react-bootstrap';
+import { getallEvents } from '../service/api';
 
-const EventDetails = () => {
-  const { name } = useParams();
+export function EventDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const event = eventsData.find(
-    (e) => e.name === name
-  );
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const response = await getallEvents(id);
+        setEvent(response.data);
+        console.log('Event fetched successfully:', response.data);
+      } catch (error) {
+        console.error('Error fetching event:', error);
+        setEvent(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Container className="py-5 text-center">
+        <p>Chargement des détails de l'événement...</p>
+      </Container>
+    );
+  }
 
   if (!event) {
-    return <h2>Event not found</h2>;
+    return (
+      <Container className="py-5 text-center">
+        <h2>Event does not exist</h2>
+        <Button variant="primary" onClick={() => navigate('/')}>
+          Back to list
+        </Button>
+      </Container>
+    );
   }
 
   return (
-    <Container className="mt-4">
-      <Card>
-        <Card.Body>
-            <Card.Img
-              variant="top"
-              src={`/${event.img}`}
-              style={{ width: "300px", height: "200px", objectFit: "cover" }}
-            />
-          <Card.Title>{event.name}</Card.Title>
-          <Card.Text>{event.description}</Card.Text>
-          <Card.Text>Price: {event.price} DT</Card.Text>
-          <Card.Text>Participants: {event.nbParticipants}</Card.Text>
-        </Card.Body>
-      </Card>
+    <Container className="py-5">
+      <Button 
+        variant="secondary" 
+        onClick={() => navigate('/')} 
+        className="mb-4"
+      >
+        ← Retour à la liste
+      </Button>
+
+      <Row>
+        <Col md={6}>
+          <Image 
+            src={event.image || '/src/assets/placeholder.jpg'} 
+            alt={event.name}
+            fluid
+            rounded
+            style={{ height: '400px', objectFit: 'cover' }}
+          />
+        </Col>
+
+        <Col md={6}>
+          <h1 className="mb-3">{event.name}</h1>
+          
+          <div className="mb-4">
+            <p className="text-muted fs-5">{event.description}</p>
+          </div>
+
+          <div className="mb-4 p-3 bg-light rounded">
+            <Row className="mb-3">
+              <Col>
+                <h5 className="text-primary">Prix</h5>
+                <p className="fs-4 fw-bold">{event.price} TND</p>
+              </Col>
+              <Col>
+                <h5 className="text-success">Billets disponibles</h5>
+                <p className="fs-4 fw-bold">{event.nbTickets}</p>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col>
+                <h5 className="text-info">Participants</h5>
+                <p className="fs-4 fw-bold">{event.nbParticipants}</p>
+              </Col>
+              <Col>
+                <h5 className="text-warning">Taux d'occupation</h5>
+                <p className="fs-4 fw-bold">
+                  {((event.nbParticipants / (event.nbParticipants + event.nbTickets)) * 100).toFixed(0)}%
+                </p>
+              </Col>
+            </Row>
+          </div>
+
+          {event.nbTickets === 0 ? (
+            <Badge bg="danger" className="fs-6 py-2 px-3">
+              ✗ Sold Out
+            </Badge>
+          ) : event.nbTickets < 5 ? (
+            <Badge bg="warning" className="fs-6 py-2 px-3 text-dark">
+              ⚠ Peu de places disponibles ({event.nbTickets})
+            </Badge>
+          ) : (
+            <Badge bg="success" className="fs-6 py-2 px-3">
+              ✓ Places disponibles
+            </Badge>
+          )}
+
+          <div className="mt-4">
+            <Button 
+              variant="primary" 
+              size="lg"
+              disabled={event.nbTickets === 0}
+              className="w-100"
+            >
+              {event.nbTickets === 0 ? 'Sold Out' : 'Réserver maintenant'}
+            </Button>
+          </div>
+        </Col>
+      </Row>
     </Container>
   );
-};
+}
 
 export default EventDetails;

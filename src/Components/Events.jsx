@@ -1,74 +1,89 @@
-import React, { useState, useEffect } from "react";
-import { Row, Alert, Container } from "react-bootstrap";
-import Event from "./Event";
-import eventsData from "../events.json";
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Alert } from 'react-bootstrap';
+import { Event } from './Event';
+import { getallEvents } from '../service/api';
 
-const Events = () => {
-  const [events, setEvents] = useState(eventsData);
-  const [showAlert, setShowAlert] = useState(false);
+export function Events() {
+  const [events, setEvents] = useState([]);
   const [showWelcome, setShowWelcome] = useState(false);
 
+  // Lifecycle: Component did mount - fetch events from API
   useEffect(() => {
-    console.log("Component Mounted");
+    console.log('Component mounted');
+    
+    const fetchEvents = async () => {
+      try {
+        const response = await getallEvents();
+        setEvents(response.data);
+        console.log('Events fetched successfully:', response.data);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
 
-    setTimeout(() => {
+    fetchEvents();
+    
+    // Show welcome message after 3 seconds
+    const timer = setTimeout(() => {
+      console.log('Welcome message displayed');
       setShowWelcome(true);
+    }, 3000);
 
-      setTimeout(() => {
-        setShowWelcome(false);
-      }, 3000);
-    }, 0);
-  }, []);
+    // Cleanup function (component will unmount)
+    return () => {
+      clearTimeout(timer);
+      console.log('Component will unmount or cleanup');
+    };
+  }, []); // Empty dependency array means this runs only on mount
 
+  // Lifecycle: Component did update (when events change)
   useEffect(() => {
-    console.log("Events Updated");
-  }, [events]);
+    console.log('Events updated:', events);
+  }, [events]); // Runs whenever events change
 
-  const buyEvent = (id) => {
-    const updatedEvents = events.map((event) => {
-      if (event.id === id && event.nbTickets > 0) {
-        return {
-          ...event,
-          nbParticipants: event.nbParticipants + 1,
-          nbTickets: event.nbTickets - 1,
-        };
-      }
-      return event;
-    });
-
-    setEvents(updatedEvents);
-    setShowAlert(true);
-
-    setTimeout(() => {
-      setShowAlert(false);
-    }, 2000);
+  const handleBook = (eventId) => {
+    console.log('Booking event:', eventId);
+    setEvents(
+      events.map((event) =>
+        event.id === eventId
+          ? {
+              ...event,
+              nbTickets: Math.max(0, event.nbTickets - 1),
+              nbParticipants: event.nbParticipants + 1,
+            }
+          : event
+      )
+    );
   };
 
-  const toggleLike = (id) => {
-    const updatedEvents = events.map((event) => {
-      if (event.id === id) {
-        return {
-          ...event,
-          like: !event.like,
-        };
-      }
-      return event;
-    });
-
-    setEvents(updatedEvents);
+  const handleLike = (eventId, liked) => {
+    console.log('Like event:', eventId, 'Status:', liked);
+    setEvents(
+      events.map((event) =>
+        event.id === eventId
+          ? { ...event, like: liked }
+          : event
+      )
+    );
   };
+
+  // Hide welcome message after 5 seconds (3 seconds to appear + 2 seconds display)
+  useEffect(() => {
+    if (showWelcome) {
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcome]);
 
   return (
-    <Container className="mt-4">
+    <Container className="py-4">
+      <h1 className="mb-4">Welcome to Event Management</h1>
+      
       {showWelcome && (
-        <Alert variant="success">
-          Welcome to ESPRIT Events Platform 🎉
-        </Alert>
-      )}
-
-      {showAlert && (
-        <Alert variant="info">
-          You have booked an event
+        <Alert variant="info" className="mb-4">
+          Welcome to ESPRIT Events Management! Explore and book your favorite events here.
         </Alert>
       )}
 
@@ -77,13 +92,12 @@ const Events = () => {
           <Event
             key={event.id}
             event={event}
-            buyEvent={buyEvent}
-            toggleLike={toggleLike}
+            onBook={handleBook}
+            onLike={handleLike}
           />
         ))}
       </Row>
     </Container>
   );
 };
-
 export default Events;
